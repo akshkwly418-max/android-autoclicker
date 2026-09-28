@@ -148,7 +148,7 @@ class MainActivity : AppCompatActivity() {
             y = dm.heightPixels / 2
         }
 
-        val config = AutoClickService.TapConfig(
+        val config = TapConfig(
             x = x,
             y = y,
             interval = binding.seekInterval.progress + 100,

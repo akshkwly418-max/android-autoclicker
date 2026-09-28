@@ -2,10 +2,8 @@ package com.zai.autoclicker
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
-import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Path
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -13,12 +11,30 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 
 /**
+ * Simple data holder describing a tap. All coordinates are absolute screen
+ * pixels.
+ *
+ * @property x tap x in px
+ * @property y tap y in px
+ * @property interval milliseconds between consecutive tap starts
+ * @property duration milliseconds each tap is held (long-press simulation)
+ * @property repeat number of taps to perform, 0 means infinite
+ */
+data class TapConfig(
+    val x: Int,
+    val y: Int,
+    val interval: Int,
+    val duration: Int,
+    val repeat: Int,
+)
+
+/**
  * AccessibilityService that performs automatic tap gestures using
  * [AccessibilityService.dispatchGesture].
  *
- * The service can be controlled from anywhere in the system through the static
- * [Controller] singleton. The MainActivity / FloatingControlsService use it to
- * start/stop tapping and to query the running state.
+ * The service can be controlled from anywhere in the system through the nested
+ * [AutoClickService.Controller] object. The MainActivity / FloatingControlsService
+ * use it to start/stop tapping and to query the running state.
  *
  * Tapping is implemented by:
  *   1. Building a [Path] that ends at the requested tap coordinates.
@@ -142,28 +158,6 @@ class AutoClickService : AccessibilityService() {
         handler.postDelayed(tickRunnable, delay)
     }
 
-    companion object {
-        private const val TAG = "AutoClickService"
-
-        /**
-         * Simple data holder describing a tap. All coordinates are absolute
-         * screen pixels.
-         *
-         * @property x tap x in px
-         * @property y tap y in px
-         * @property interval milliseconds between consecutive tap starts
-         * @property duration milliseconds each tap is held (long-press simulation)
-         * @property repeat number of taps to perform, 0 means infinite
-         */
-        data class TapConfig(
-            val x: Int,
-            val y: Int,
-            val interval: Int,
-            val duration: Int,
-            val repeat: Int,
-        )
-    }
-
     /**
      * Static bridge between the UI (MainActivity / FloatingControlsService) and
      * the bound [AutoClickService]. Lets callers start/stop tapping without
@@ -178,7 +172,7 @@ class AutoClickService : AccessibilityService() {
 
         fun isRunning(): Boolean = instance?.isRunningInternal() ?: false
 
-        fun start(config: TapClickConfig): Boolean {
+        fun start(config: TapConfig): Boolean {
             val s = instance ?: return false
             return try {
                 s.startInternal(config)
@@ -204,8 +198,8 @@ class AutoClickService : AccessibilityService() {
             stateListeners.forEach { it.invoke(running) }
         }
     }
-}
 
-/** Public alias for [AutoClickService.TapConfig] so callers do not need to
- *  reference the companion object of a service class. */
-typealias TapClickConfig = AutoClickService.TapConfig
+    companion object {
+        private const val TAG = "AutoClickService"
+    }
+}
