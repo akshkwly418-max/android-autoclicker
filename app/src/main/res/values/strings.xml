@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name">Auto Clicker</string>
+    <string name="accessibility_service_label">Auto Clicker Service</string>
+    <string name="accessibility_service_description">Performs automatic tap gestures at a configurable interval. Used by the Auto Clicker app to simulate taps on the screen.</string>
+
+    <!-- MainActivity -->
+    <string name="header_settings">Settings</string>
+    <string name="label_interval">Interval between taps (ms)</string>
+    <string name="label_duration">Tap duration (ms)</string>
+    <string name="label_repeat">Number of taps (0 = infinite)</string>
+    <string name="label_position">Tap position</string>
+    <string name="position_last_touch">Last touch point</string>
+    <string name="position_custom">Custom coordinates</string>
+    <string name="label_x">X (px)</string>
+    <string name="label_y">Y (px)</string>
+    <string name="hint_pick_position">Pick a point on screen</string>
+
+    <string name="header_status">Status</string>
+    <string name="status_permission_overlay">Overlay permission: %1$s</string>
+    <string name="status_permission_accessibility">Accessibility permission: %1$s</string>
+    <string name="status_running">Auto clicker: RUNNING</string>
+    <string name="status_stopped">Auto clicker: STOPPED</string>
+    <string name="permission_granted">granted</string>
+    <string name="permission_missing">missing</string>
+
+    <string name="btn_start">Start</string>
+    <string name="btn_stop">Stop</string>
+    <string name="btn_grant_overlay">Grant overlay permission</string>
+    <string name="btn_grant_accessibility">Grant accessibility permission</string>
+    <string name="btn_open_settings">Open Accessibility Settings</string>
+
+    <string name="toast_overlay_required">Overlay permission is required to show the floating control button.</string>
+    <string name="toast_accessibility_required">Accessibility permission is required to perform taps.</string>
+    <string name="toast_started">Auto clicker started. Use the floating button to stop.</string>
+    <string name="toast_stopped">Auto clicker stopped.</string>
+    <string name="toast_invalid_position">Please pick a valid tap position first.</string>
+
+    <!-- Floating button -->
+    <string name="floating_label">Auto</string>
+    <string name="floating_notification_channel">Auto Clicker control</string>
+    <string name="floating_notification_text">Auto Clicker is running. Tap to stop.</string>
+    <string name="notification_stop">Stop</string>
+</resources>

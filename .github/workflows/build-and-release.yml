@@ -1,0 +1,121 @@
+name: Build & Release APK
+
+# ─────────────────────────────────────────────────────────────────────────────
+# This workflow:
+#   1. Checks out the repository.
+#   2. Sets up JDK 17 and the Android SDK.
+#   3. Runs the Gradle wrapper to build a release (and debug) APK.
+#   4. Uploads build reports and APKs as workflow run artifacts (always).
+#   5. Creates/updates a GitHub Release tagged "latest" and attaches the APKs.
+#
+# The release trigger conditions are intentionally permissive:
+#   • Push to `main` or `master`.
+#   • Any tag matching `v*` (e.g. `v1.0.0`).
+#   • Manual dispatch from the Actions tab.
+#
+# The release APK is signed with the standard Android debug keystore that is
+# generated on-the-fly inside the build, so it will install on any developer
+# device that trusts the debug signing key. Users who need a Play Store-ready
+# build should override `signingConfig` in app/build.gradle.kts.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # required by softprops/action-gh-release to create releases
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build debug & release APKs
+        run: ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             artifacts/autoclicker-debug.apk
+          cp app/build/outputs/apk/release/app-release.apk \
+             artifacts/autoclicker-release.apk
+
+          VERSION="${GITHUB_REF_NAME:-snapshot}"
+          cp app/build/outputs/apk/release/app-release.apk \
+             "artifacts/autoclicker-${VERSION}.apk"
+
+          ls -la artifacts/
+        shell: bash
+
+      - name: Upload build artifacts (CI artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoclicker-apks
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Generate release tag
+        id: tag
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+            echo "name=Latest build" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create / update GitHub Release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.name }}
+          generate_release_notes: true
+          prerelease: false
+          files: artifacts/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
